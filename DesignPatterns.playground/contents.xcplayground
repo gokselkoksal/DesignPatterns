@@ -8,5 +8,6 @@
         <page name='AdapterPattern'/>
         <page name='BridgePattern'/>
         <page name='FilterPattern'/>
+        <page name='CompositePattern'/>
     </pages>
 </playground>
