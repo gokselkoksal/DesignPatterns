@@ -2,15 +2,20 @@
 
 import Foundation
 
-enum Gender {
+enum Gender: String {
     case male
     case female
 }
 
-struct Person {
+struct Person: CustomStringConvertible {
+    
     let name: String
     let gender: Gender
     let age: UInt
+    
+    var description: String {
+        return "{ \(name), \(gender.rawValue), \(age) }"
+    }
 }
 
 protocol Filter {
@@ -93,8 +98,17 @@ let people = [
     Person(name: "Gokalp", gender: .male, age: 20),
 ]
 
+extension Array where Element == Person {
+    func applying(_ filter: Filter) -> [Element] {
+        return self.filter { filter.predicate().evaluate(with: $0) }
+    }
+}
+
 let filter1 = CompoundFilter.and(MinimumAgeFilter(age: 18), NamePrefixFilter(prefix: "Go"))
-let filteredPeople1 = people.filter { filter1.predicate().evaluate(with: $0) }
-print(filteredPeople1)
+let filter2 = GenderFilter(gender: .female)
+let filter1OrFilter2 = CompoundFilter.or(filter1, filter2)
+print(people.applying(filter1))
+print(people.applying(filter2))
+print(people.applying(filter1OrFilter2))
 
 //: [Next](@next)
