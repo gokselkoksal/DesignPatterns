@@ -10,5 +10,6 @@
         <page name='FilterPattern'/>
         <page name='CompositePattern'/>
         <page name='DecoratorPattern'/>
+        <page name='FacadePattern'/>
     </pages>
 </playground>
