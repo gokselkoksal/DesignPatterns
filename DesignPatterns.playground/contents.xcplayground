@@ -9,5 +9,6 @@
         <page name='BridgePattern'/>
         <page name='FilterPattern'/>
         <page name='CompositePattern'/>
+        <page name='DecoratorPattern'/>
     </pages>
 </playground>
