@@ -13,5 +13,6 @@
         <page name='FacadePattern'/>
         <page name='ProxyPattern'/>
         <page name='CommandPattern'/>
+        <page name='StrategyPattern'/>
     </pages>
 </playground>
