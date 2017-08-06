@@ -12,5 +12,6 @@
         <page name='DecoratorPattern'/>
         <page name='FacadePattern'/>
         <page name='ProxyPattern'/>
+        <page name='CommandPattern'/>
     </pages>
 </playground>
