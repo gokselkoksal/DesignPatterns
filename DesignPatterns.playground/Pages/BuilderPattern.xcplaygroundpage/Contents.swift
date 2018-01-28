@@ -4,172 +4,195 @@ import Foundation
 
 // MARK: - Protocols
 
-protocol MainFood: CustomStringConvertible {
+protocol ProductProtocol {
     var name: String { get }
-    var price: Float { get }
+    var price: Double { get }
 }
+
+protocol HasFoodSizeProtocol {
+    var size: FoodSize { get }
+}
+
+protocol MainFoodProtocol: ProductProtocol, CustomStringConvertible { }
+protocol DrinkProtocol: ProductProtocol, HasFoodSizeProtocol, CustomStringConvertible { }
+protocol SideFoodProtocol: ProductProtocol, HasFoodSizeProtocol, CustomStringConvertible { }
+
+// MARK: Types
 
 enum FoodSize: String {
-    case normal
-    case large
+    case normal = "Normal"
+    case large = "Large"
 }
 
-protocol Drink: MainFood {
-    var size: FoodSize { get }
+enum DrinkSelection: String {
+    case coke = "Coke"
+    case milkshake = "Milkshake"
 }
 
-protocol SideFood: MainFood {
-    var size: FoodSize { get }
+enum SideFoodSelection: String {
+    case chips = "Chips"
+    case wings = "Wings"
 }
 
-// MARK: - Concrete types
-
-struct BigMacBurger: MainFood {
-    let name: String = "Big Mac Burger"
-    let price: Float = 5.0
+enum BurgerSelection: String {
+    case bigMac = "Big Mac"
+    case bigKing = "Big King"
 }
 
-struct BigKingBurger: MainFood {
-    let name: String = "Big King Burger"
-    let price: Float = 6.0
-}
-
-struct Coke: Drink {
-    let name: String = "Coke"
-    var price: Float {
-        switch size {
-        case .large:  return 2.5
-        case .normal: return 2.0
-        }
-    }
-    let size: FoodSize
-}
-
-struct Milkshake: Drink {
-    let name: String = "Milkshake"
-    var price: Float {
-        switch size {
-        case .large:  return 4.0
-        case .normal: return 3.5
-        }
-    }
-    let size: FoodSize
-}
-
-struct Chips: SideFood {
-    let name: String = "Chips"
-    var price: Float {
-        switch size {
-        case .large:  return 4.0
-        case .normal: return 3.5
-        }
-    }
-    let size: FoodSize
-}
-
-struct Wings: SideFood {
-    let name: String = "Wings"
-    var price: Float {
-        switch size {
-        case .large:  return 4.5
-        case .normal: return 4.0
-        }
-    }
-    let size: FoodSize
-}
-
-struct Meal: CustomStringConvertible {
+struct Drink: DrinkProtocol {
     
-    let main: MainFood
-    let side: SideFood
-    let drink: Drink
+    let selection: DrinkSelection
+    let size: FoodSize
+    let price: Double
     
-    var description: String {
-        return "\(main) | \(side) | \(drink) | Total: \(totalPrice())"
+    var name: String {
+        return selection.rawValue
     }
+}
+
+struct SideFood: SideFoodProtocol {
     
-    func totalPrice() -> Float {
+    let selection: SideFoodSelection
+    let size: FoodSize
+    let price: Double
+    
+    var name: String {
+        return selection.rawValue
+    }
+}
+
+struct Burger: MainFoodProtocol {
+    
+    let selection: BurgerSelection
+    let price: Double
+    
+    var name: String {
+        return selection.rawValue
+    }
+}
+
+struct Meal {
+    
+    let main: MainFoodProtocol
+    let side: SideFoodProtocol
+    let drink: DrinkProtocol
+    
+    func totalPrice() -> Double {
         return main.price + side.price + drink.price
+    }
+}
+
+// MARK: - Factories
+
+class MealFactory {
+    
+    private static let burgerPrices: [BurgerSelection: Double] = [
+        .bigKing: 6.5,
+        .bigMac: 5.0
+    ]
+    
+    private static let drinkPrices: [DrinkSelection: [FoodSize: Double]] = [
+        .coke: [.normal: 2.0, .large: 2.5],
+        .milkshake: [.normal: 3.5, .large: 4.0]
+    ]
+    
+    private static let sideFoodPrices: [SideFoodSelection: [FoodSize: Double]] = [
+        .chips: [.normal: 3.5, .large: 4.0],
+        .wings: [.normal: 4.0, .large: 4.5]
+    ]
+    
+    func makeBurger(selection: BurgerSelection) -> Burger {
+        return Burger(
+            selection: selection,
+            price: MealFactory.burgerPrices[selection]!
+        )
+    }
+    
+    func makeDrink(selection: DrinkSelection, size: FoodSize) -> Drink {
+        return Drink(
+            selection: selection,
+            size: size,
+            price: MealFactory.drinkPrices[selection]![size]!
+        )
+    }
+    
+    func makeSideFood(selection: SideFoodSelection, size: FoodSize) -> SideFood {
+        return SideFood(
+            selection: selection,
+            size: size,
+            price: MealFactory.sideFoodPrices[selection]![size]!
+        )
     }
 }
 
 // MARK: - Helpers
 
-extension MainFood {
+extension MainFoodProtocol {
     var description: String {
-        return name
+        return "\(name)"
     }
 }
 
-extension SideFood {
+extension SideFoodProtocol {
     var description: String {
         return "\(name) (\(size))"
     }
 }
 
-extension Drink {
+extension DrinkProtocol {
     var description: String {
         return "\(name) (\(size))"
+    }
+}
+
+extension Meal: CustomStringConvertible {
+    var description: String {
+        return "\(main) | \(side) | \(drink) | Total: \(totalPrice())"
     }
 }
 
 // MARK: - Builder
 
-class MealBuilder {
+protocol ModelBuilder {
+    associatedtype Model
+    func build() -> Model
+}
+
+class BurgerMealBuilder: ModelBuilder {
     
-    enum DrinkType {
-        case coke
-        case milkshake
+    let burgerSelection: BurgerSelection
+    var sideFoodSelection: SideFoodSelection = .chips
+    var drinkSelection: DrinkSelection = .coke
+    var mealSize: FoodSize = .normal
+    
+    private let factory = MealFactory()
+    
+    init(burgerSelection: BurgerSelection) {
+        self.burgerSelection = burgerSelection
     }
     
-    enum SideFoodType {
-        case chips
-        case wings
-    }
-    
-    func makeBigMacMeal(withDrink drink: DrinkType, side: SideFoodType, size: FoodSize) -> Meal {
+    func build() -> Meal {
         return Meal(
-            main: BigMacBurger(),
-            side: makeSideFood(withType: side, size: size),
-            drink: makeDrink(withType: drink, size: size)
+            main: factory.makeBurger(selection: self.burgerSelection),
+            side: factory.makeSideFood(selection: self.sideFoodSelection, size: self.mealSize),
+            drink: factory.makeDrink(selection: self.drinkSelection, size: self.mealSize)
         )
-    }
-    
-    func makeBigKingMeal(withDrink drink: DrinkType, side: SideFoodType, size: FoodSize) -> Meal {
-        return Meal(
-            main: BigKingBurger(),
-            side: makeSideFood(withType: side, size: size),
-            drink: makeDrink(withType: drink, size: size)
-        )
-    }
-    
-    private func makeDrink(withType type: DrinkType, size: FoodSize) -> Drink {
-        switch type {
-        case .coke:      return Coke(size: size)
-        case .milkshake: return Milkshake(size: size)
-        }
-    }
-    
-    private func makeSideFood(withType type: SideFoodType, size: FoodSize) -> SideFood {
-        switch type {
-        case .chips: return Chips(size: size)
-        case .wings: return Wings(size: size)
-        }
     }
 }
 
 // MARK: - Usage
 
-let builder = MealBuilder()
-let normalBigMacMeal = builder.makeBigMacMeal(withDrink: .coke, side: .chips, size: .normal)
-let largeBigMacMeal = builder.makeBigMacMeal(withDrink: .coke, side: .chips, size: .large)
-let normalBigKingMeal = builder.makeBigKingMeal(withDrink: .milkshake, side: .wings, size: .normal)
-let largeBigKingMeal = builder.makeBigKingMeal(withDrink: .milkshake, side: .wings, size: .large)
+let bigKingBuilder = BurgerMealBuilder(burgerSelection: .bigKing)
+bigKingBuilder.drinkSelection = .milkshake
+bigKingBuilder.mealSize = .large
 
-print(normalBigMacMeal)
-print(largeBigMacMeal)
-print(normalBigKingMeal)
-print(largeBigKingMeal)
+let bigMacBuilder = BurgerMealBuilder(burgerSelection: .bigMac)
+bigMacBuilder.sideFoodSelection = .wings
 
+let menu1 = bigKingBuilder.build()
+let menu2 = bigMacBuilder.build()
+
+print(menu1)
+print(menu2)
 
 //: [Next](@next)
